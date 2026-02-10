@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Snake Clean | Game Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&family=Rajdhani:wght@600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-red: #ff003c;
+            --neon-gold: #ffd700;
+            --glass: rgba(20, 20, 20, 0.95);
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-dark);
+            /* Arka planı biraz daha sadeleştirdik */
+            background-image: radial-gradient(circle at center, #111 0%, #000 100%);
+            font-family: 'Orbitron', sans-serif;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #game-wrapper {
+            position: relative;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            background: #000; /* Tam siyah arka plan */
+            border: 2px solid #333;
+            border-radius: 12px;
+            display: block;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+        }
+
+        /* ARAYÜZ (HUD) */
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            width: 800px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .hud-box {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        #total-money { color: var(--neon-gold); text-shadow: 0 0 10px var(--neon-gold); font-weight: bold;}
+
+        /* MARKET MODALI */
+        #shop-modal {
+            display: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            height: 80%;
+            background: var(--glass);
+            border: 2px solid var(--neon-gold);
+            border-radius: 20px;
+            padding: 30px;
+            z-index: 100;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 0 100px rgba(255, 215, 0, 0.2);
+            overflow-y: auto;
+        }
+
+        #shop-modal::-webkit-scrollbar { width: 8px; }
+        #shop-modal::-webkit-scrollbar-thumb { background: var(--neon-gold); border-radius: 4px; }
+
+        .shop-header { text-align: center; margin-bottom: 30px; }
+        .shop-header h2 { color: var(--neon-gold); font-size: 2.5rem; margin: 0; text-shadow: 0 0 20px var(--neon-gold); }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 25px;
+            padding: 10px;
+        }
+
+        .skin-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #444;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .skin-card:hover { transform: translateY(-5px); border-color: white; }
+        .skin-card.owned { border-color: var(--neon-blue); background: rgba(0, 243, 255, 0.05); }
+        .skin-card.equipped { border-color: var(--neon-gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); background: rgba(255, 215, 0, 0.05); }
+
+        .preview-box { height: 60px; margin-bottom: 15px; border-radius: 8px; background: #000; }
+        
+        .buy-btn {
+            background: #222; color: #888; border: 1px solid #444; padding: 10px;
+            border-radius: 8px; cursor: pointer; font-family: 'Rajdhani', sans-serif;
+            font-weight: 800; width: 100%; margin-top: 10px; transition: 0.2s;
+        }
+
+        .buy-btn.can-buy { background: var(--neon-gold); color: black; border-color: var(--neon-gold); }
+        .buy-btn.equip { background: var(--neon-blue); color: black; border-color: var(--neon-blue); }
+        .buy-btn:hover:not(:disabled) { transform: scale(1.05); }
+
+        .ui-btn {
+            background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue);
+            padding: 10px 25px; cursor: pointer; font-family: 'Orbitron', sans-serif;
+            font-weight: bold; transition: 0.3s; border-radius: 5px;
+        }
+        .ui-btn:hover { background: var(--neon-blue); color: black; box-shadow: 0 0 25px var(--neon-blue); }
+
+        #close-shop {
+            position: absolute; top: 20px; right: 30px; background: none; border: none;
+            color: white; font-size: 2rem; cursor: pointer; transition: 0.3s;
+        }
+        #close-shop:hover { color: var(--neon-red); transform: rotate(90deg); }
+
+        #game-over {
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95); padding: 50px; text-align: center; border: 2px solid var(--neon-red);
+            box-shadow: 0 0 100px rgba(255, 0, 60, 0.5); z-index: 50; border-radius: 20px;
+        }
+
+        /* SOL ALT BUTON */
+        .back-home-btn {
+            position: fixed; bottom: 30px; left: 30px;
+            background: rgba(0,0,0,0.8); border: 2px solid var(--neon-pink); color: var(--neon-pink);
+            padding: 12px 25px; border-radius: 50px; text-decoration: none; font-weight: bold;
+            display: flex; align-items: center; gap: 10px; transition: 0.3s; z-index: 99;
+        }
+        .back-home-btn:hover { background: var(--neon-pink); color: black; box-shadow: 0 0 30px var(--neon-pink); }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-home-btn">&#8678; ANA MENÜ</a>
+
+    <div class="hud">
+        <div class="hud-box">SKOR: <span id="current-score" style="color:var(--neon-blue)">0</span></div>
+        <div class="hud-box">BAKİYE: <span id="total-money">0</span> $</div>
+        <button class="ui-btn" onclick="openShop()">MARKET 🛒</button>
+    </div>
+
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        
+        <div id="game-over">
+            <h2 style="color: var(--neon-red); font-size: 3rem; margin: 0 0 20px 0;">YILAN ÖLDÜ</h2>
+            <p style="font-size: 1.2rem; margin-bottom: 30px;">Kazanılan Puan: <span id="final-score" style="color:white; font-weight:bold;">0</span></p>
+            <button class="ui-btn" onclick="resetGame()">TEKRAR OYNA</button>
+        </div>
+    </div>
+
+    <div id="shop-modal">
+        <button id="close-shop" onclick="closeShop()">✕</button>
+        <div class="shop-header">
+            <h2>GENETİK LABORATUVARI</h2>
+            <p style="color:#aaa; letter-spacing: 1px;">Yılanını evrimleştir ve yeni güçlere kavuş.</p>
+        </div>
+        <div class="shop-grid" id="shop-container"></div>
+    </div>
+
+    <script>
+        // Sadece yemek yiyince çıkan efekt için
+        let particles = [];
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y; this.color = color;
+                this.size = Math.random() * 4 + 2;
+                this.speedX = Math.random() * 2 - 1;
+                this.speedY = Math.random() * 2 - 1;
+                this.life = 1.0;
+            }
+            update() {
+                this.x += this.speedX; this.y += this.speedY;
+                this.life -= 0.05; this.size *= 0.9;
+            }
+            draw(ctx) {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 25;
+        const tileCountX = canvas.width / gridSize;
+        const tileCountY = canvas.height / gridSize;
+
+        let gameLoop;
+        let snake = [];
+        let food = {};
+        let traps = [];
+        let dx = 1; let dy = 0;
+        let score = 0;
+        let isGameOver = false;
+        let isPaused = false;
+        let frameCount = 0;
+
+        let player = {
+            money: parseInt(localStorage.getItem('snakeMoney')) || 0,
+            ownedSkins: JSON.parse(localStorage.getItem('snakeSkins')) || [0],
+            equippedSkin: parseInt(localStorage.getItem('equippedSkin')) || 0
+        };
+
+        const skinsDB = [
+            { 
+                id: 0, name: "Neon Basic", price: 0, multiplier: 1, 
+                desc: "Klasik neon yılan.",
+                render: (ctx, x, y, index, total) => {
+                    ctx.fillStyle = index === 0 ? '#fff' : '#39ff14';
+                    ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 15;
+                    ctx.fillRect(x, y, gridSize-2, gridSize-2);
+                }
+            },
+            { 
+                id: 1, name: "Ocean Fade", price: 500, multiplier: 1.2,
+                desc: "Maviden mora renk geçişi.",
+                render: (ctx, x, y, index, total) => {
+                    let ratio = index / total; 
+                    let r = 0 + (188 - 0) * ratio;
+                    let g = 243 + (19 - 243) * ratio;
+                    let b = 255 + (254 - 255) * ratio;
+                    ctx.fillStyle = `rgb(${r},${g},${b})`;
+                    ctx.shadowColor = `rgb(${r},${g},${b})`; ctx.shadowBlur = 10;
+                    ctx.fillRect(x, y, gridSize-2, gridSize-2);
+                }
+            },
+            { 
+                id: 2, name: "Magma Core", price: 1200, multiplier: 1.5,
+                desc: "Ateş renginde parlayan yılan.",
+                render: (ctx, x, y, index, total) => {
+                    ctx.fillStyle = index === 0 ? '#ffae00' : '#ff4500';
+                    ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 20;
+                    ctx.beginPath();
+                    ctx.arc(x + gridSize/2, y + gridSize/2, gridSize/2 - 1, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            },
+            { 
+                id: 3, name: "Cyber Ghost", price: 2500, multiplier: 2.0,
+                desc: "Yarı saydam hayalet.",
+                render: (ctx, x, y, index, total) => {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${1 - (index/total)})`;
+                    ctx.shadowColor = '#fff'; ctx.shadowBlur = 10;
+                    ctx.fillRect(x, y, gridSize-2, gridSize-2);
+                }
+            },
+            { 
+                id: 4, name: "RGB Gamer", price: 5000, multiplier: 3.0,
+                desc: "Renk değiştiren LED ışıklar.",
+                render: (ctx, x, y, index, total) => {
+                    let hue = (frameCount * 5 + index * 10) % 360;
+                    ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                    ctx.shadowColor = `hsl(${hue}, 100%, 50%)`; ctx.shadowBlur = 15;
+                    ctx.fillRect(x, y, gridSize-2, gridSize-2);
+                }
+            },
+            { 
+                id: 5, name: "Golden King", price: 10000, multiplier: 5.0,
+                desc: "Saf altın kaplama.",
+                render: (ctx, x, y, index, total) => {
+                    ctx.fillStyle = '#ffd700';
+                    ctx.shadowColor = '#DAA520'; ctx.shadowBlur = 25;
+                    ctx.beginPath();
+                    ctx.moveTo(x + gridSize/2, y);
+                    ctx.lineTo(x + gridSize, y + gridSize/2);
+                    ctx.lineTo(x + gridSize/2, y + gridSize);
+                    ctx.lineTo(x, y + gridSize/2);
+                    ctx.fill();
+                }
+            }
+        ];
+
+        function initGame() {
+            snake = [{x: 10, y: 10}, {x:9, y:10}, {x:8, y:10}];
+            dx = 1; dy = 0;
+            score = 0;
+            isGameOver = false;
+            particles = [];
+            traps = [];
+            frameCount = 0;
+            updateUI();
+            document.getElementById('game-over').style.display = 'none';
+            createFood();
+            
+            setInterval(manageTraps, 4000);
+
+            if(gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(gameStep, 80);
+        }
+
+        function gameStep() {
+            if (isPaused || isGameOver) return;
+            frameCount++;
+
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+            if (head.x < 0) head.x = tileCountX - 1;
+            if (head.x >= tileCountX) head.x = 0;
+            if (head.y < 0) head.y = tileCountY - 1;
+            if (head.y >= tileCountY) head.y = 0;
+
+            if (snake.some(p => p.x === head.x && p.y === head.y) || 
+                traps.some(t => t.x === head.x && t.y === head.y)) {
+                gameOver();
+                return;
+            }
+
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+                let multiplier = skinsDB[player.equippedSkin].multiplier;
+                score += Math.ceil(10 * multiplier);
+                
+                // Sadece yemek yendiğinde ufak parıltı (iz değil)
+                for(let i=0; i<8; i++) {
+                    particles.push(new Particle(
+                        head.x * gridSize + gridSize/2, 
+                        head.y * gridSize + gridSize/2, 
+                        '#fff'
+                    ));
+                }
+                createFood();
+            } else {
+                snake.pop();
+            }
+
+            updateUI();
+            draw();
+        }
+
+        function draw() {
+            // ÖNEMLİ DEĞİŞİKLİK: İz bırakmaması için tam opak siyah ile temizliyoruz
+            ctx.fillStyle = '#050505'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Yemek Efektleri
+            particles.forEach((p, index) => {
+                p.update();
+                p.draw(ctx);
+                if (p.life <= 0) particles.splice(index, 1);
+            });
+
+            // Tuzaklar
+            ctx.fillStyle = '#ff003c';
+            ctx.shadowColor = '#ff003c'; ctx.shadowBlur = 15;
+            traps.forEach(t => {
+                let sizeMod = Math.sin(frameCount * 0.2) * 2;
+                ctx.fillRect(t.x * gridSize + sizeMod, t.y * gridSize + sizeMod, gridSize-2-sizeMod, gridSize-2-sizeMod);
+            });
+
+            // Yemek
+            let foodGlow = Math.abs(Math.sin(frameCount * 0.1)) * 20 + 10;
+            ctx.fillStyle = '#fff';
+            ctx.shadowColor = '#fff'; ctx.shadowBlur = foodGlow;
+            ctx.beginPath();
+            ctx.arc(food.x*gridSize + gridSize/2, food.y*gridSize + gridSize/2, gridSize/3, 0, Math.PI*2);
+            ctx.fill();
+
+            // Yılan
+            const currentSkin = skinsDB[player.equippedSkin];
+            snake.forEach((part, index) => {
+                currentSkin.render(ctx, part.x * gridSize, part.y * gridSize, index, snake.length);
+            });
+
+            ctx.shadowBlur = 0;
+        }
+
+        function createFood() {
+            food = {
+                x: Math.floor(Math.random() * tileCountX),
+                y: Math.floor(Math.random() * tileCountY)
+            };
+            if(snake.some(p => p.x === food.x && p.y === food.y)) createFood();
+        }
+
+        function manageTraps() {
+            if(isPaused || isGameOver) return;
+            traps = [];
+            if(Math.random() > 0.4) {
+                let count = Math.floor(Math.random() * 5) + 3; 
+                for(let i=0; i<count; i++) {
+                    traps.push({
+                        x: Math.floor(Math.random() * tileCountX),
+                        y: Math.floor(Math.random() * tileCountY)
+                    });
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('current-score').innerText = score;
+            document.getElementById('total-money').innerText = player.money;
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            player.money += score;
+            saveData();
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('game-over').style.display = 'block';
+        }
+
+        function saveData() {
+            localStorage.setItem('snakeMoney', player.money);
+            localStorage.setItem('snakeSkins', JSON.stringify(player.ownedSkins));
+            localStorage.setItem('equippedSkin', player.equippedSkin);
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        function openShop() {
+            isPaused = true;
+            document.getElementById('shop-modal').style.display = 'block';
+            renderShop();
+        }
+
+        function closeShop() {
+            isPaused = false;
+            document.getElementById('shop-modal').style.display = 'none';
+        }
+
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
+
+            skinsDB.forEach(skin => {
+                const isOwned = player.ownedSkins.includes(skin.id);
+                const isEquipped = player.equippedSkin === skin.id;
+                
+                let btnHtml = '';
+                if (isEquipped) {
+                    btnHtml = `<button class="buy-btn" disabled>KULLANILIYOR</button>`;
+                } else if (isOwned) {
+                    btnHtml = `<button class="buy-btn equip" onclick="equipSkin(${skin.id})">SEÇ</button>`;
+                } else {
+                    const canAfford = player.money >= skin.price;
+                    const btnClass = canAfford ? 'can-buy' : '';
+                    const disabled = canAfford ? '' : 'disabled';
+                    btnHtml = `<button class="buy-btn ${btnClass}" onclick="buySkin(${skin.id})" ${disabled}>${skin.price}$</button>`;
+                }
+
+                let previewColor = skin.name === "RGB Gamer" ? "linear-gradient(45deg, red, blue, green)" : 
+                                   skin.name === "Ocean Fade" ? "linear-gradient(to right, #00f3ff, #bc13fe)" :
+                                   skin.name === "Magma Core" ? "linear-gradient(to right, #ffae00, #ff4500)" :
+                                   skin.name === "Golden King" ? "#ffd700" :
+                                   skin.name === "Cyber Ghost" ? "rgba(255,255,255,0.5)" : "#39ff14";
+
+                const cardHtml = `
+                    <div class="skin-card ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}">
+                        <div class="preview-box" style="background:${previewColor}; box-shadow: 0 0 15px rgba(255,255,255,0.2);"></div>
+                        <h4 style="margin:5px 0; color:white;">${skin.name}</h4>
+                        <p style="font-size:0.8rem; color:#aaa; height:30px;">${skin.desc}</p>
+                        <p style="font-size:0.9rem; color:var(--neon-gold); font-weight:bold;">Çarpan: x${skin.multiplier}</p>
+                        ${btnHtml}
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }
+
+        function buySkin(id) {
+            const skin = skinsDB[id];
+            if (player.money >= skin.price) {
+                player.money -= skin.price;
+                player.ownedSkins.push(id);
+                saveData();
+                renderShop();
+                updateUI();
+            }
+        }
+
+        function equipSkin(id) {
+            player.equippedSkin = id;
+            saveData();
+            renderShop();
+        }
+
+        document.addEventListener('keydown', e => {
+            if(['ArrowUp','w','W'].includes(e.key) && dy !== 1) { dx=0; dy=-1; }
+            if(['ArrowDown','s','S'].includes(e.key) && dy !== -1) { dx=0; dy=1; }
+            if(['ArrowLeft','a','A'].includes(e.key) && dx !== 1) { dx=-1; dy=0; }
+            if(['ArrowRight','d','D'].includes(e.key) && dx !== -1) { dx=1; dy=0; }
+        });
+
+        initGame();
+
+    </script>
+</body>
+</html>
