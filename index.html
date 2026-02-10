@@ -1,23 +1,198 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <title>Benim Web Sitem</title>
-  <style>
-    body {
-      background: #0f172a;
-      color: #e5e7eb;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding-top: 80px;
-    }
-    h1 { font-size: 42px; }
-    p { font-size: 18px; opacity: 0.9; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Hub | Developer Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-pink: #ff00ff;
+            --neon-blue: #00f3ff;
+            --neon-orange: #ff9d00;
+            --neon-green: #39ff14;
+            --glass-bg: rgba(20, 20, 20, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            /* Taş Duvarlı Arka Plan */
+            background: url('http://googleusercontent.com/image_generation_content/2') no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Share Tech Mono', monospace;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 0, 20, 0.5);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Başlık Alanı */
+        .header-console {
+            margin-top: 40px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px 35px;
+            border: 2px solid var(--neon-pink);
+            border-radius: 8px;
+            box-shadow: 0 0 20px var(--neon-pink), inset 0 0 15px rgba(255, 0, 255, 0.3);
+            text-align: center;
+            z-index: 20;
+            margin-bottom: 20px;
+        }
+
+        .header-console h1 {
+            margin: 0;
+            font-size: 1.3rem;
+            color: var(--neon-pink);
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        /* Kart Konteyneri */
+        .container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+            z-index: 10;
+            padding: 40px;
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        /* Genel Kart Stili */
+        .game-card {
+            width: 300px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            cursor: pointer;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        }
+
+        .game-card:hover {
+            transform: translateY(-15px) scale(1.03);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 180px;
+            border-radius: 15px;
+            background-size: cover;
+            background-position: center;
+            margin-bottom: 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .game-card h2 {
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            font-weight: 800;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .game-card p { color: #ccc; font-size: 0.9rem; margin-bottom: 20px; height: 40px; }
+
+        /* BUTON GENEL */
+        .play-btn {
+            display: inline-block;
+            padding: 10px 30px;
+            text-decoration: none;
+            color: #000;
+            font-weight: 900;
+            border-radius: 30px;
+            text-transform: uppercase;
+            transition: all 0.3s ease-in-out;
+            letter-spacing: 1px;
+        }
+
+        /* === OYUN 1: MODERN UZAY (MAVİ) === */
+        .card-space h2 { color: var(--neon-blue); text-shadow: 0 0 15px var(--neon-blue); }
+        .card-space:hover { border-color: var(--neon-blue); box-shadow: 0 0 30px var(--neon-blue); }
+        .card-space .card-image { background-image: url('https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=500&q=80'); }
+        .btn-space { background: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue); }
+        .btn-space:hover { background: #fff; box-shadow: 0 0 30px #fff; }
+
+        /* === OYUN 2: RETRO ARABA (TURUNCU) === */
+        .card-car h2 { color: var(--neon-orange); text-shadow: 0 0 15px var(--neon-orange); }
+        .card-car:hover { border-color: var(--neon-orange); box-shadow: 0 0 30px var(--neon-orange); }
+        .card-car .card-image { background-image: url('https://images.unsplash.com/photo-1593118247619-e2d6f056869e?auto=format&fit=crop&w=500&q=80'); }
+        .btn-car { background: var(--neon-orange); box-shadow: 0 0 15px var(--neon-orange); }
+        .btn-car:hover { background: #fff; box-shadow: 0 0 30px #fff; }
+
+        /* === OYUN 3: NEON SNAKE (YEŞİL) - GÖRSEL GÜNCELLENDİ === */
+        .card-snake h2 { color: var(--neon-green); text-shadow: 0 0 15px var(--neon-green); }
+        .card-snake:hover { border-color: var(--neon-green); box-shadow: 0 0 30px var(--neon-green); }
+        /* YENİ GÖRSEL: Soyut neon yeşil ışık izleri */
+        .card-snake .card-image { background-image: url('https://images.unsplash.com/photo-1484589065579-248aad0d8b13?auto=format&fit=crop&w=500&q=80'); } 
+        .btn-snake { background: var(--neon-green); box-shadow: 0 0 15px var(--neon-green); }
+        .btn-snake:hover { background: #fff; box-shadow: 0 0 30px #fff; }
+
+        /* Footer */
+        .footer {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink);
+            font-weight: bold;
+            letter-spacing: 4px;
+        }
+    </style>
 </head>
 <body>
-  <h1>Merhaba 👋</h1>
-  <p>Bu benim GitHub Pages ile açtığım ilk web sitem.</p>
-  <p>Öğreniyorum, geliştiriyorum, yakında daha fazlası burada.</p>
+
+    <div class="header-console">
+        <h1>&lt;SYSTEM_READY&gt;</h1>
+    </div>
+
+    <div class="container">
+        
+        <div class="game-card card-space" onclick="location.href='oyun1.html'">
+            <div class="card-image"></div>
+            <h2>NEON DUNK</h2>
+            <p>Galaksinin derinliklerinde rekor kır.</p>
+            <a href="oyun1.html" class="play-btn btn-space">BAŞLAT</a>
+        </div>
+
+        <div class="game-card card-car" onclick="location.href='oyun2.html'">
+            <div class="card-image"></div>
+            <h2>SPEED RACER</h2>
+            <p>Klasik arcade tarzı hız deneyimi.</p>
+            <a href="oyun2.html" class="play-btn btn-car">GAZLA</a>
+        </div>
+
+        <div class="game-card card-snake" onclick="location.href='oyun3.html'">
+            <div class="card-image"></div>
+            <h2>NEON SNAKE</h2>
+            <p>Dijital ızgarada avlan, puanları topla ve yılanını evrimleştir.</p>
+            <a href="oyun3.html" class="play-btn btn-snake">OYNA</a>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        // DEVELOPED BY NIF
+    </div>
+
 </body>
 </html>
